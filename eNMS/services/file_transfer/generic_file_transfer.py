@@ -46,7 +46,6 @@ class GenericFileTransferService(Service):
             ssh_client.load_system_host_keys()
         source = run.sub(run.source_file, locals())
         destination = run.sub(run.destination_file, locals())
-        success, result = True, f"File {source} transferred successfully"
         ssh_client.connect(
             device.ip_address,
             username=device.username,
@@ -56,46 +55,27 @@ class GenericFileTransferService(Service):
         if run.source_file_includes_globbing:
             glob_source_file_list = glob(source, recursive=False)
             if not glob_source_file_list:
-                success = False
-                result = f"Glob pattern {source} returned no matching files"
+                return {
+                    "success": False,
+                    "result": f"Glob pattern {source} returned no matching files",
+                }
             else:
-                pairs = []
+                files = []
                 for glob_source in glob_source_file_list:
                     if Path(glob_source).is_dir():
-                        run.log(
-                            "warn",
-                            (
-                                f"Skipping glob transfer of directory"
-                                f"{glob_source} to {destination}"
-                            ),
-                            device,
-                        )
                         continue
                     _, filename = split(glob_source)
                     if destination[-1] != "/":
                         destination = destination + "/"
                     glob_destination = destination + filename
-                    pairs.append((glob_source, glob_destination))
-                run.log(
-                    "info",
-                    (
-                        f"Transferring glob file(s)"
-                        f"{glob_source_file_list} to {destination}"
-                    ),
-                    device,
-                )
-                run.transfer_file(ssh_client, pairs)
-        elif not Path(source).is_file():
-            success = False
-            result = (
-                f"Source file {source} does not exist, is a directory,"
-                " or you forgot to enable globbing"
-            )
+                    files.append((glob_source, glob_destination))
         else:
-            run.log("info", f"Transferring file {source} to {destination}", device)
-            run.transfer_file(ssh_client, [(source, destination)])
+            files = [(source, destination)]
+        log = ", ".join("Transferring {} to {}".format(*pairs) for pairs in files)
+        run.log("info", log, device)
+        run.transfer_file(ssh_client, files)
         ssh_client.close()
-        return {"success": success, "result": result}
+        return {"success": True, "result": "Transfer successful"}
 
 
 class GenericFileTransferForm(ServiceForm):
@@ -107,9 +87,16 @@ class GenericFileTransferForm(ServiceForm):
     missing_host_key_policy = BooleanField()
     load_known_host_keys = BooleanField()
     look_for_keys = BooleanField()
-    source_file_includes_globbing = BooleanField(
-        "Source file includes glob pattern (Put Direction only)"
-    )
+    source_file_includes_globbing = BooleanField("Source file includes glob pattern")
     max_transfer_size = IntegerField(default=2 ** 30)
     window_size = IntegerField(default=2 ** 30)
     timeout = FloatField(default=10.0)
+
+    def validate(self):
+        valid_form = super().validate()
+        invalid_direction = (
+            self.source_file_includes_globbing.data and self.direction.data == "get"
+        )
+        if invalid_direction:
+            self.direction.errors.append("Globbing only works with the 'PUT' direction")
+        return valid_form and not invalid_direction
