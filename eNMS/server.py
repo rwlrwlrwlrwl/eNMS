@@ -473,7 +473,7 @@ class Server(Flask):
                     **request.get_json(force=True),
                 }
                 errors, devices, pools = [], [], []
-                service = db.fetch("service", name=data["name"])
+                service = db.fetch("service", name=data["name"], rbac="run")
                 handle_asynchronously = data.get("async", False)
                 for device_name in data.get("devices", ""):
                     device = db.fetch("device", name=device_name)
@@ -508,7 +508,7 @@ class Server(Flask):
             decorators = [self.auth.login_required, self.monitor_rest_request]
 
             def post(self):
-                task = db.fetch("task", id=request.get_json())
+                task = db.fetch("task", rbac="schedule", id=request.get_json())
                 data = {
                     "trigger": "Scheduler",
                     "creator": request.authorization["username"],
