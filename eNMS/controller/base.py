@@ -64,7 +64,7 @@ class BaseController:
         self.database = database
         self.logging = logging
         self.load_custom_properties()
-        self.path = Path.cwd()
+        self.path = Path.cwd() / "eNMS"
         self.init_encryption()
         self.use_vault = settings["vault"]["use_vault"]
         if self.use_vault:
