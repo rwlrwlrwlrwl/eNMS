@@ -49,7 +49,7 @@ class Server(Flask):
         super().__init__(__name__, static_folder=static_folder)
         self.update_config(mode)
         self.register_extensions()
-        #self.register_plugins()
+        # self.register_plugins()
         self.configure_login_manager()
         self.configure_context_processor()
         self.configure_errors()
