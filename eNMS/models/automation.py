@@ -48,7 +48,6 @@ from eNMS.models.administration import User  # noqa: F401
 
 @db.set_custom_properties
 class Service(AbstractBase):
-
     __tablename__ = "service"
     type = db.Column(db.SmallString)
     __mapper_args__ = {"polymorphic_identity": "service", "polymorphic_on": type}
@@ -201,18 +200,18 @@ class Service(AbstractBase):
         public_services = query.filter(models["service"].public == true())
         user_services = (
             query.join(models["service"].originals.of_type(service_alias))
-            .join(models["access"], service_alias.access)
-            .join(models["user"], models["access"].users)
-            .filter(models["access"].services_access.contains(mode))
-            .filter(models["user"].name == user.name)
+                .join(models["access"], service_alias.access)
+                .join(models["user"], models["access"].users)
+                .filter(models["access"].services_access.contains(mode))
+                .filter(models["user"].name == user.name)
         )
         user_group_services = (
             query.join(models["service"].originals.of_type(service_alias))
-            .join(models["access"], service_alias.access)
-            .join(models["group"], models["access"].groups)
-            .join(models["user"], models["group"].users)
-            .filter(models["access"].services_access.contains(mode))
-            .filter(models["user"].name == user.name)
+                .join(models["access"], service_alias.access)
+                .join(models["group"], models["access"].groups)
+                .join(models["user"], models["group"].users)
+                .filter(models["access"].services_access.contains(mode))
+                .filter(models["user"].name == user.name)
         )
         return public_services.union(user_services, user_group_services)
 
@@ -232,7 +231,6 @@ class Service(AbstractBase):
 
 
 class ConnectionService(Service):
-
     __tablename__ = "connection_service"
     id = db.Column(Integer, ForeignKey("service.id"), primary_key=True)
     parent_type = "service"
@@ -246,7 +244,6 @@ class ConnectionService(Service):
 
 
 class Result(AbstractBase):
-
     __tablename__ = type = "result"
     private = True
     log_change = False
@@ -306,7 +303,6 @@ class Result(AbstractBase):
 
 
 class ServiceLog(AbstractBase):
-
     __tablename__ = type = "service_log"
     private = True
     log_change = False
@@ -321,7 +317,6 @@ class ServiceLog(AbstractBase):
 
 
 class Run(AbstractBase):
-
     __tablename__ = type = "run"
     __table_args__ = (
         Index("ix_run_parent_runtime_0", "parent_runtime", "runtime"),
@@ -404,18 +399,18 @@ class Run(AbstractBase):
         service_alias = aliased(models["service"])
         user_services = (
             query.join(cls.service)
-            .join(models["service"].originals.of_type(service_alias))
-            .join(models["access"], service_alias.access)
-            .join(models["user"], models["access"].users)
-            .filter(models["user"].name == user.name)
+                .join(models["service"].originals.of_type(service_alias))
+                .join(models["access"], service_alias.access)
+                .join(models["user"], models["access"].users)
+                .filter(models["user"].name == user.name)
         )
         user_group_services = (
             query.join(cls.service)
-            .join(models["service"].originals.of_type(service_alias))
-            .join(models["access"], service_alias.access)
-            .join(models["group"], models["access"].groups)
-            .join(models["user"], models["group"].users)
-            .filter(models["user"].name == user.name)
+                .join(models["service"].originals.of_type(service_alias))
+                .join(models["access"], service_alias.access)
+                .join(models["group"], models["access"].groups)
+                .join(models["user"], models["group"].users)
+                .filter(models["user"].name == user.name)
         )
         return public_services.union(user_services, user_group_services)
 
@@ -594,9 +589,9 @@ class Run(AbstractBase):
             }
             results["trigger"] = self.trigger
             if (
-                self.runtime == self.parent_runtime
-                or len(self.devices) > 1
-                or self.run_method == "once"
+                    self.runtime == self.parent_runtime
+                    or len(self.devices) > 1
+                    or self.run_method == "once"
             ):
                 results = self.create_result(results)
             if app.redis_queue and self.runtime == self.parent_runtime:
@@ -766,19 +761,19 @@ class Run(AbstractBase):
                     result = "\n".join(format_exc().splitlines())
                     results = {"success": False, "result": result}
                 if device and (
-                    getattr(self, "close_connection", False)
-                    or self.runtime == self.parent_runtime
+                        getattr(self, "close_connection", False)
+                        or self.runtime == self.parent_runtime
                 ):
                     self.close_device_connection(device.name)
                 self.convert_result(results)
                 if "success" not in results:
                     results["success"] = True
                 if self.service.postprocessing and (
-                    self.postprocessing_mode == "always"
-                    or self.postprocessing_mode == "failure"
-                    and not results["success"]
-                    or self.postprocessing_mode == "success"
-                    and results["success"]
+                        self.postprocessing_mode == "always"
+                        or self.postprocessing_mode == "failure"
+                        and not results["success"]
+                        or self.postprocessing_mode == "success"
+                        and results["success"]
                 ):
                     try:
                         _, exec_variables = self.eval(
@@ -789,11 +784,11 @@ class Run(AbstractBase):
                     except SystemExit:
                         pass
                 run_validation = (
-                    self.validation_condition == "always"
-                    or self.validation_condition == "failure"
-                    and not results["success"]
-                    or self.validation_condition == "success"
-                    and results["success"]
+                        self.validation_condition == "always"
+                        or self.validation_condition == "failure"
+                        and not results["success"]
+                        or self.validation_condition == "success"
+                        and results["success"]
                 )
                 if run_validation and self.validation_method != "none":
                     self.validate_result(results, payload, device)
@@ -879,19 +874,19 @@ class Run(AbstractBase):
         return results
 
     def log(
-        self,
-        severity,
-        log,
-        device=None,
-        change_log=False,
-        logger=None,
-        service_log=True,
+            self,
+            severity,
+            log,
+            device=None,
+            change_log=False,
+            logger=None,
+            service_log=True,
     ):
         try:
             log_level = int(self.original.service.log_level)
         except Exception:
             log_level = 1
-        if not log_level or severity not in app.log_levels[log_level - 1 :]:
+        if not log_level or severity not in app.log_levels[log_level - 1:]:
             return
         if device:
             device_name = device if isinstance(device, str) else device.name
@@ -1017,10 +1012,10 @@ class Run(AbstractBase):
             if self.delete_spaces_before_matching:
                 match, str_result = map(self.space_deleter, (match, str_result))
             success = (
-                self.content_match_regex
-                and bool(search(match, str_result))
-                or match in str_result
-                and not self.content_match_regex
+                    self.content_match_regex
+                    and bool(search(match, str_result))
+                    or match in str_result
+                    and not self.content_match_regex
             )
         else:
             match = self.sub(self.dict_match, locals())
@@ -1046,30 +1041,30 @@ class Run(AbstractBase):
     def transfer_file(self, ssh_client, files):
         if self.protocol == "sftp":
             with SFTPClient.from_transport(
-                ssh_client.get_transport(),
-                window_size=self.window_size,
-                max_packet_size=self.max_transfer_size,
+                    ssh_client.get_transport(),
+                    window_size=self.window_size,
+                    max_packet_size=self.max_transfer_size,
             ) as sftp:
                 sftp.get_channel().settimeout(self.timeout)
                 for source, destination in files:
                     getattr(sftp, self.direction)(source, destination)
         else:
             with SCPClient(
-                ssh_client.get_transport(), socket_timeout=self.timeout
+                    ssh_client.get_transport(), socket_timeout=self.timeout
             ) as scp:
                 for source, destination in files:
                     getattr(scp, self.direction)(source, destination)
 
     def payload_helper(
-        self,
-        payload,
-        name,
-        value=None,
-        device=None,
-        section=None,
-        operation="__setitem__",
-        allow_none=False,
-        default=None,
+            self,
+            payload,
+            name,
+            value=None,
+            device=None,
+            section=None,
+            operation="__setitem__",
+            allow_none=False,
+            default=None,
     ):
         payload = payload.setdefault("variables", {})
         if device:
@@ -1402,3 +1397,13 @@ class Run(AbstractBase):
         }
         with open(path / "data.yml", "w") as file:
             yaml.dump(data, file, default_flow_style=False)
+
+    def napalm_commit(self, napalm_connection, device, config, action="load_merge_candidate"):
+        getattr(napalm_connection, action)(config=config)
+        diff = napalm_connection.compare_config()
+        if len(diff) > 0:
+            self.log("info", f"napalm_commit diff:{diff}", device)
+            napalm_connection.commit_config()
+        else:
+            self.log("info", f"No Changes needed", device)
+            napalm_connection.discard_config()
